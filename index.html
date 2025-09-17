@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Rashi's Arcade — Portfolio</title>
+
+<!-- Pixel font -->
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<style>
+  /* ============================
+     Vars & base
+     ============================ */
+  :root{
+    --bg:#05040a;
+    --cabinet:#0b0b10;
+    --neon-pink:#ff57a6;
+    --neon-cyan:#4de0ff;
+    --neon-yellow:#ffd84d;
+    --muted:#9fb2c7;
+    --accent:#ff6b00;
+    --glass: rgba(255,255,255,0.03);
+    --card: linear-gradient(180deg,#0b1220,#031018);
+  }
+  html,body{height:100%;margin:0;background:var(--bg);font-family:'Press Start 2P',monospace;color:#fff; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+  *{box-sizing:border-box}
+  a{color:var(--neon-cyan);text-decoration:none}
+  .center{display:flex;align-items:center;justify-content:center;}
+
+  /* ============================
+     Cabinet wrapper
+     ============================ */
+  .wrap{
+    min-height:100vh;padding:28px;display:flex;align-items:center;justify-content:center;
+    background: radial-gradient(circle at 25% 10%, rgba(255,255,255,0.02), transparent 2%), radial-gradient(circle at 85% 90%, rgba(255,255,255,0.01), transparent 6%);
+  }
+  .cabinet{
+    width:980px; max-width:96vw; height:620px; border-radius:18px; padding:20px; background:linear-gradient(180deg,#0b0c10,#050506); box-shadow: 0 30px 80px rgba(0,0,0,0.8); display:flex; gap:16px; position:relative; overflow:hidden; border:6px solid #0a0a0a;
+  }
+
+  /* side art */
+  .side {
+    width:240px; background:linear-gradient(135deg,#20071a,#07112a); border-radius:12px; padding:12px; display:flex;flex-direction:column;align-items:center;gap:10px;
+    color:var(--neon-pink);
+  }
+  .side .art{width:100%;height:170px;background:linear-gradient(180deg,#06030d,#0f0a1a);border-radius:8px;display:flex;align-items:center;justify-content:center}
+  .side .art img{max-width:100%;height:auto;border-radius:6px;filter:contrast(1.05) saturate(1.1)}
+  .side .title{font-size:11px;color:var(--neon-yellow);letter-spacing:1px}
+  .coin {
+    margin-top:6px;
+    display:flex;flex-direction:column;gap:8px;width:100%;
+  }
+  .coin button{padding:10px;border-radius:8px;background:#111;border:2px solid rgba(255,255,255,0.04);cursor:pointer;color:#fff;font-size:11px}
+  .scoreboard{margin-top:6px;font-size:10px;color:var(--muted);width:100%;text-align:left}
+
+  /* cabinet screen */
+  .screen-area{flex:1;background:var(--card);border-radius:10px;padding:16px;position:relative;display:flex;flex-direction:column;overflow:hidden;border:4px solid rgba(255,255,255,0.03)}
+  /* scanlines */
+  .screen-area::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.02) 1px, transparent 2px);background-size:100% 3px;mix-blend-mode:overlay;pointer-events:none;opacity:0.55}
+  /* CRT vignette */
+  .screen-area::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(255,255,255,0.02) 0%, transparent 35%);pointer-events:none}
+
+  /* marquee/attract */
+  .attract{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:12px;position:relative;z-index:3}
+  .marquee{font-size:40px;color:var(--neon-pink);text-shadow:0 0 8px rgba(255,87,166,0.6);letter-spacing:4px;animation:rainbow 5s linear infinite, glow 2.2s ease-in-out infinite;}
+  @keyframes rainbow{0%{color:var(--neon-pink)}25%{color:var(--neon-yellow)}50%{color:var(--neon-cyan)}75%{color:#9bff8a}100%{color:var(--neon-pink)}}
+  @keyframes glow{0%,100%{text-shadow:0 0 8px rgba(255,87,166,0.4),0 0 20px currentColor}50%{text-shadow:0 0 22px rgba(255,255,255,0.6),0 0 48px currentColor}}
+  .press-start{font-size:12px;color:var(--neon-cyan);padding:10px 16px;border-radius:8px;background:rgba(255,255,255,0.02);cursor:pointer; user-select:none; animation:blink 1s infinite}
+  @keyframes blink{0%{opacity:1}50%{opacity:.25}100%{opacity:1}}
+
+  .highscores{margin-top:6px;color:var(--neon-yellow); font-size:11px; line-height:1.6}
+  .attract .sparkles{position:absolute;inset:0;pointer-events:none}
+  .spark{position:absolute;width:3px;height:3px;background:#fff;border-radius:2px;opacity:.9;filter:blur(.2px);animation:spark 2.2s linear infinite}
+  @keyframes spark{0%{transform:translateY(0) scale(.8);opacity:1}100%{transform:translateY(-420px) scale(1.4);opacity:0}}
+
+  /* attract demo overlay */
+  .demo-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent,#0006);display:flex;align-items:flex-end;justify-content:center;padding:16px;pointer-events:none;}
+
+  /* HUD and nav (hidden in attract) */
+  .hud{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 4px;border-radius:6px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.02);font-size:11px}
+  .nav{display:flex;gap:8px}
+  .nav button{background:var(--glass);padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);cursor:pointer;color:#fff;font-size:11px}
+  .quicklinks{display:flex;gap:8px;align-items:center}
+
+  /* content container */
+  .content{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px}
+  .page{display:none}
+  .page.active{display:block}
+
+  /* summary / page 1 */
+  .summary-grid{display:grid;grid-template-columns:1fr 320px;gap:12px;align-items:start}
+  .profile-card{background:linear-gradient(180deg,#071222,#04101a);padding:14px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+  .profile-card h1{font-size:12px;margin:0;color:var(--neon-pink)}
+  .profile-bio{font-size:10px;color:var(--muted);line-height:1.5;margin-top:10px}
+
+  /* Projects page */
+  .cartridge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+  .cartridge{
+    background:linear-gradient(180deg,#0d0712,#1c071a);
+    border-radius:8px;padding:12px;border:2px solid rgba(255,255,255,0.03);cursor:pointer;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6); transform-origin:center; transition:transform .12s ease, box-shadow .12s;
+  }
+  .cartridge:hover{transform:translateY(-8px); box-shadow: 0 30px 60px rgba(0,0,0,0.75)}
+  .cart-title{font-size:11px;color:var(--neon-yellow)}
+  .cart-sub{font-size:9px;color:var(--muted);margin-top:6px}
+  .cart-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .tag{font-size:9px;padding:6px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03)}
+
+   /* two separate modals */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:9999;padding:24px}
+  .modal.open{display:flex}
+  .game-modal{width:980px;max-width:95%;background:linear-gradient(180deg,#02030a,#061022);border-radius:8px;padding:18px;border:4px solid rgba(255,255,255,0.03);box-shadow:0 40px 120px rgba(0,0,0,0.9)}
+  .modal .close{display:inline-block;margin-left:auto;background:#111;padding:8px 10px;border-radius:6px;cursor:pointer;color:#fff;font-size:11px;border:1px solid rgba(255,255,255,0.02)}
+
+  /* project modal layout: overview left, code right */
+  .proj-top{display:flex;gap:12px;align-items:flex-start}
+  .proj-left{flex:1;padding-right:8px}
+  .proj-right{width:420px}
+  .code-block{background:#001211;padding:10px;border-radius:6px;border:1px solid rgba(255,255,255,0.02);font-family:monospace;font-size:10px;color:#9df8ff;overflow:auto;max-height:320px}
+
+  /* cert modal layout: cert left, overview right */
+  .cert-top{display:flex;gap:12px;align-items:flex-start}
+  .cert-left{width:420px;display:flex;align-items:center;justify-content:center;min-height:220px}
+  .cert-right{flex:1;font-size:11px;color:var(--muted)}
+
+  /* skills page */
+  .skills-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .skill-card{background:linear-gradient(180deg,#07121a,#041018);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+  .skill-name{font-size:11px;color:var(--neon-yellow)}
+  .skill-bar{height:10px;background:rgba(255,255,255,0.03);border-radius:6px;margin-top:8px;overflow:hidden}
+  .skill-fill{height:100%;background:linear-gradient(90deg,var(--neon-cyan),var(--neon-pink));}
+
+  /* education & certs */
+  .timeline{display:flex;flex-direction:column;gap:8px}
+  .timeline .item{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;font-size:11px}
+
+  /* experience / certificates */
+  .cert-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .cert-card{background:linear-gradient(180deg,#081122,#041018);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);font-size:11px}
+  .cert-card img{width:100%;height:120px;object-fit:cover;border-radius:6px}
+
+  /* contact page */
+  .contact-grid{display:grid;grid-template-columns:1fr 280px;gap:12px}
+  .contact-links{display:flex;flex-direction:column;gap:8px}
+  .contact-links a{font-size:11px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);display:inline-block;}
+
+  /* pixel avatar animation (contact right) */
+  .pixel-desk{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+  .pixel-stage{width:240px;height:220px;background:linear-gradient(180deg,#05060b,#081020);border-radius:8px;padding:12px;border:2px solid rgba(255,255,255,0.02);position:relative;overflow:hidden}
+  .desk{position:absolute;left:18px;right:18px;bottom:18px;height:70px;background:#251a10;border-radius:8px}
+  /* very simple CSS sprite using blocks */
+  .pixel-avatar{
+    width:64px;height:64px;background:
+      linear-gradient(#ffdbb3 0 0) 0px 0/64px 64px; /* face block placeholder*/
+    position:absolute;left:60px;top:40px;border-radius:6px;border:2px solid rgba(0,0,0,0.4);
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;color:#111;font-size:10px;
+    animation: bob 2s infinite;
+  }
+  @keyframes bob{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+  .laptop{width:90px;height:54px;background:#111;position:absolute;left:120px;top:66px;border-radius:4px;border:2px solid rgba(255,255,255,0.02)}
+  .cup{width:18px;height:20px;background:#fff;position:absolute;left:40px;top:120px;border-radius:4px;transform:rotate(-6deg);}
+
+  /* credits roll */
+  .credits{font-size:10px;color:var(--muted);padding:10px}
+
+  /* responsive */
+  @media(max-width:980px){
+    .cabinet{flex-direction:column;height:auto}
+    .side{width:100%;flex-direction:row;padding:8px;gap:8px}
+    .screen-area{height:540px}
+    .summary-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="cabinet" role="application" aria-label="Rashi's Arcade Portfolio">
+    <!-- LEFT side art -->
+    <div class="side" aria-hidden="false">
+      <br><br><div class="art" id="cabArt">
+        <!-- replace with an image (pixel art cabinet side) -->
+        <img src="Gif.gif" alt="cabinet art">
+      </div><br><br><br><br>
+      <div class="title">Rashi's Arcade Portfolio</div>
+
+      <div class="scoreboard" aria-hidden="false">
+        <div style="color:var(--neon-yellow);font-weight:700"><br><br>HIGH SCORES<br><br></div>
+        <div style="margin-top:6px">1ST CLEAN_CODE — 56895<br><br></div>
+        <div>2ND BOSS_FIGHT — 45210<br><br></div>
+        <div>3RD JAVA_FIRE — 37755<br><br></div>
+      </div>
+    </div>
+
+    <!-- SCREEN AREA -->
+    <div class="screen-area" id="screenArea">
+      <!-- ATTRACT MODE -->
+      <div id="attract" class="attract" role="dialog" aria-label="Attract screen">
+        <div class="marquee" id="marquee">R A S H I ' S <br><br>&nbsp;&nbsp; A R C A D E</div>
+        <div class="press-start" id="pressStart" role="button" tabindex="0">PRESS START</div>
+        <div class="highscores" id="attScores">
+          1ST CLEAN_CODE 56895<br>
+          2ND BOSS_FIGHT 45210<br>
+          3RD JAVA_FIRE 37755<br>
+          4TH PIXEL_QUEEN 36500<br>
+          5TH AI_WIZARD 34455
+        </div>
+        <div class="sparkles" aria-hidden="true"></div>
+        <div id="demoHint" style="position:absolute;bottom:12px;font-size:11px;color:var(--muted)">Idle demo will play in <span id="demoTimer">10</span>s</div>
+      </div>
+
+      <!-- HUD (hidden until start) -->
+      <div class="hud" id="hud" style="display:none">
+        <div>LIVES: <strong id="lives">3</strong> &nbsp; <br><br> &nbsp; SCORE: <strong id="score">000120</strong></div>
+        <div class="nav">
+          <button class="navBtn" data-target="summary">SUMMARY</button>
+          <button class="navBtn" data-target="projects">PROJECTS</button>
+          <button class="navBtn" data-target="skills">SKILLS</button>
+          <button class="navBtn" data-target="education">EDU</button>
+          <button class="navBtn" data-target="experience">CERTS</button>
+          <button class="navBtn" data-target="contact">CONTACT</button>
+        </div>
+      </div>
+
+      <!-- content -->
+      <div class="content" id="content" style="display:none">
+        <!-- Page: Summary (first page after start) -->
+        <section id="summary" class="page active" aria-labelledby="summaryTitle">
+          <div class="summary-grid">
+            <div class="profile-card">
+              <h1 id="summaryTitle">Rashi Vyas</h1>
+              <div class="profile-bio">
+                Computer Science undergrad (Batch 2025).<br>Specializing in Java, DSA, and Clean Code principles.<br> Skilled in full-stack development, cloud foundations, and data visualization, with certifications from AWS, Deloitte, and Tata Forage.<br>I build elegant, user-first full-stack apps and prototypes using Java, React, Electron, and Cloud.<br> I love problem-solving, clean code, and designing delightful UI experiences — like offline music players and interactive visualizations. <br>Selected for IBM internships and McKinsey Forward program.
+              </div>
+              <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+                <button onclick="openNav('projects')" style="padding:10px;border-radius:8px;background:var(--neon-pink);border:none;cursor:pointer">EXPLORE PROJECTS</button>
+                <button onclick="openNav('contact')" style="padding:10px;border-radius:8px;background:var(--neon-cyan);border:none;cursor:pointer">CONTACT</button>
+              </div>
+            </div>
+
+            <div>
+              <div style="background:linear-gradient(180deg,#071222,#04101a);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)">
+                <div style="font-size:11px;color:var(--neon-yellow)">Fast Facts</div>
+                 <div style="font-size:10px;color:var(--muted);margin-top:8px">
+                  • Java (Advanced) <br><br>• DSA <br><br>• React/Electron<br><br> • AWS/GCP <br><br> • Tableau/PowerBI<br><br>
+                  • IBM SkillsBuild — AI & Cloud <br><br> • Vodafone — AI-LLMs <br><br> • McKinsey Forward
+                 </div>
+                 <div style="margin-top:12px;font-size:10px">
+                  <strong>Recruiter Quick Links</strong>
+                 </div>
+                 <div style="display:flex;gap:8px;margin-top:8px">
+                  <a href="resume.pdf" download id="quickResume" style="padding:8px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03)">RESUME</a>
+                  <a href="https://www.linkedin.com/in/rashi-vyas-code/" target="_blank" style="padding:8px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03)">LINKEDIN</a>
+                 </div>
+              </div>
+
+              <div style="margin-top:12px;background:linear-gradient(180deg,#071222,#04101a);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)">
+                <div style="font-size:11px;color:var(--neon-yellow)">Boss Fights Won</div>
+                <ul style="font-size:10px;color:var(--muted);margin-top:8px">
+                  <li>Debugged a 1000-line concurrency bug in Java (reduced latency 30%)<br><br></li>
+                  <li>Built & deployed Electron offline music player with playlist engine<br><br></li>
+                  <li>Designed FIR filing portal with secure sessions and MySQL<br><br></li>
+                  <li>Made an interactive website single handedly for a startup<br></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Page: Projects -->
+        <section id="projects" class="page" aria-labelledby="projectsTitle">
+          <h2 id="projectsTitle" style="font-size:12px;color:var(--neon-yellow)">PROJECTS — Pick a Game</h2>
+          <div class="cartridge-grid" id="cartridgeGrid">
+            <!-- cartridge: Music Player -->
+            <div class="cartridge" data-project="music">
+              <div class="cart-title">Coquette Music Player</div>
+              <div class="cart-sub"><br>•Electron.js<br><br> • JS<br><br> • UI<br><br> • Offline playback<br><br> • React</div>
+              <div class="cart-tags">
+                <div class="tag">Electron</div><div class="tag">JS</div><div class="tag">UI</div>
+              </div>
+            </div>
+
+            <!-- cartridge: FIR -->
+            <div class="cartridge" data-project="fir">
+              <div class="cart-title">Online FIR Filing System</div>
+              <div class="cart-sub"><br>•JavaScript<br><br> • MySQL<br><br> • Security<br><br> • CSS<br><br> • HTML</div>
+              <div class="cart-tags"><div class="tag">Java</div><div class="tag">MySQL</div><div class="tag">Accessibility</div></div>
+            </div>
+
+            <!-- cartridge: News -->
+            <div class="cartridge" data-project="news">
+              <div class="cart-title">Dynamic News Website</div>
+              <div class="cart-sub"><br>•HTML/CSS/JS <br><br>• Responsive<br><br> • DOM</div>
+              <div class="cart-tags"><div class="tag">JS</div><div class="tag">Responsive</div><div class="tag">UX</div></div>
+            </div>
+
+             <!-- cartridge: Website -->
+            <div class="cartridge" data-project="website">
+              <div class="cart-title">Startup Business Website</div>
+              <div class="cart-sub"><br>•HTML/CSS/JS <br><br>• Responsive<br><br> • E-commerce <br><br> • Multiple pages</div>
+              <div class="cart-tags"><div class="tag">JS</div><div class="tag">Personalised</div><div class="tag">UI</div></div>
+            </div>
+
+            <!-- add as many cartridges as you want; each cartridge data-project attribute -->
+          </div>
+        </section>
+
+        <!-- Page: Skills -->
+        <section id="skills" class="page" aria-labelledby="skillsTitle">
+          <h2 id="skillsTitle" style="font-size:12px;color:var(--neon-yellow)">SKILLS — Power-Up Tree</h2>
+          <div class="skills-grid">
+            <div class="skill-card">
+              <div class="skill-name">Java (OOP & DSA)</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:6px"> Core projects, algorithms, clean architecture</div>
+              <div class="skill-bar" style="margin-top:8px"><div class="skill-fill" style="width:75%"></div></div>
+            </div>
+            <div class="skill-card">
+              <div class="skill-name">Data Structures & Algorithms</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:6px">Problem solving, contest prep, optimized solutions</div>
+              <div class="skill-bar" style="margin-top:8px"><div class="skill-fill" style="width:80%"></div></div>
+            </div>
+            <div class="skill-card">
+              <div class="skill-name">React & Electron</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:6px">UI first, desktop app builds, component-driven</div>
+              <div class="skill-bar" style="margin-top:8px"><div class="skill-fill" style="width:82%"></div></div>
+            </div>
+            <div class="skill-card">
+              <div class="skill-name">Cloud (AWS, GCP)</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:6px">Deployment, EC2, S3, Cloud Foundations</div>
+              <div class="skill-bar" style="margin-top:8px"><div class="skill-fill" style="width:72%"></div></div>
+            </div>
+            <div class="skill-card">
+              <div class="skill-name">Data Analysis (PowerBI, Tableau)</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:6px">Data analysis, visualization,  presentation</div>
+              <div class="skill-bar" style="margin-top:8px"><div class="skill-fill" style="width:87%"></div></div>
+            </div>
+            <div class="skill-card">
+              <div class="skill-name">Communication</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:6px">Public events, Uni Programs, Fluency, Confidence</div>
+              <div class="skill-bar" style="margin-top:8px"><div class="skill-fill" style="width:92%"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Page: Education -->
+        <section id="education" class="page" aria-labelledby="educationTitle">
+          <h2 id="educationTitle" style="font-size:12px;color:var(--neon-yellow)">EDUCATION</h2>
+          <div class="timeline">
+            <div class="item"><strong>Institute of Engineering and Science <br><br> IPS Academy, Indore<br><br></strong> — Bachelor of Technology<br><br> Computer Science and Information Technology<br><br> (2021-2025) <br><br> CGPA 7.33</div>
+            <div class="item"><strong>Carmel Convent Senior Secondary School<br><br> Bhopal <br><br> The School is affiliated to the Central Board of Secondary Education, New Delhi w.e.f. April 1994 and managed by the Carmel Convent Education Society to cater to the educational needs of the children.<br><br> KG1-12th, Graduated in 2021.</strong></div>
+          </div>
+        </section>
+
+        <!-- Page: Experience & Certificates -->
+        <section id="experience" class="page" aria-labelledby="experienceTitle">
+          <h2 id="experienceTitle" style="font-size:12px;color:var(--neon-yellow)">EXPERIENCE & CERTIFICATES</h2>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div class="cert-card" style="width:320px">
+              <div style="font-size:11px;color:var(--neon-cyan)">IBM SkillsBuild Internship</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:8px">AI & Cloud prototypes, Aug 2025</div>
+              <div style="margin-top:8px"><button onclick="showCertificate('ibm')">OPEN CERTIFICATE</button></div>
+            </div><br>
+            <div class="cert-card" style="width:320px">
+              <div style="font-size:11px;color:var(--neon-cyan)">Vodafone — AI/LLMs (CSR)</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:8px">Data analytics using LLMs, Nov 2024</div>
+              <div style="margin-top:8px"><button onclick="showCertificate('vodafone')">OPEN CERTIFICATE</button></div>
+            </div><br>
+            <div class="cert-card" style="width:320px">
+              <div style="font-size:11px;color:var(--neon-cyan)">AWS Academy Graduate</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:8px">AWS Academy Cloud Foundations, April 2024</div>
+              <div style="margin-top:8px"><button onclick="showCertificate('awsc')">OPEN CERTIFICATE</button></div>
+            </div>
+            <div class="cert-card" style="width:320px">
+              <div style="font-size:11px;color:var(--neon-cyan)">AWS Academy Graduate </div>
+              <div style="font-size:10px;color:var(--muted);margin-top:8px">AWS Academy Machine Learning Foundations, March 2025</div>
+              <div style="margin-top:8px"><button onclick="showCertificate('awsml')">OPEN CERTIFICATE</button></div>
+            </div><br>
+            <div class="cert-card" style="width:320px">
+              <div style="font-size:11px;color:var(--neon-cyan)">McKinsey Forward </div>
+              <div style="font-size:10px;color:var(--muted);margin-top:8px">McKinsey Forward Graduate, 2025</div>
+              <div style="margin-top:8px"><button onclick="showCertificate('mckinsey')">OPEN CERTIFICATE</button></div>
+            </div><br>
+           <div class="cert-card" style="width:320px">
+              <div style="font-size:11px;color:var(--neon-cyan)">Deloitte Internship </div>
+              <div style="font-size:10px;color:var(--muted);margin-top:8px">Data Analytics Job Simulation, Sept 2025</div>
+              <div style="margin-top:8px"><button onclick="showCertificate('deloitte')">OPEN CERTIFICATE</button></div>
+            </div><br>
+            <div class="cert-card" style="width:320px">
+              <div style="font-size:11px;color:var(--neon-cyan)">Tata Micro Internship </div>
+              <div style="font-size:10px;color:var(--muted);margin-top:8px">Data Visualisation: Empowering Business with Effective Insights, Sept 2025</div>
+              <div style="margin-top:8px"><button onclick="showCertificate('tata')">OPEN CERTIFICATE</button></div>
+            </div><br>
+            <div class="cert-card" style="width:320px">
+              <div style="font-size:11px;color:var(--neon-cyan)">Nestle - Resilience </div>
+              <div style="font-size:10px;color:var(--muted);margin-top:8px">Nestle E-Learning 2025 | Resilience</div>
+              <div style="margin-top:8px"><button onclick="showCertificate('nestle')">OPEN CERTIFICATE</button></div>
+            </div><br>
+            <div class="cert-card" style="width:320px">
+              <div style="font-size:11px;color:var(--neon-cyan)"> Java Completion </div>
+              <div style="font-size:10px;color:var(--muted);margin-top:8px">Java Programming, May 2023</div>
+              <div style="margin-top:8px"><button onclick="showCertificate('java')">OPEN CERTIFICATE</button></div>
+            </div><br>
+            <div class="cert-card" style="width:320px">
+              <div style="font-size:11px;color:var(--neon-cyan)"> OOPs </div>
+              <div style="font-size:10px;color:var(--muted);margin-top:8px">OOPs in Java, June 2023</div>
+              <div style="margin-top:8px"><button onclick="showCertificate('oops')">OPEN CERTIFICATE</button></div>
+            </div><br>
+          </div>
+        </section>
+
+        <!-- Page: Contact -->
+        <section id="contact" class="page" aria-labelledby="contactTitle">
+          <h2 id="contactTitle" style="font-size:12px;color:var(--neon-yellow)">CONTACT</h2>
+          <div class="contact-grid">
+            <div class="contact-links">
+              <a href="mailto:rrv2805@gmail.com">Email — rrv2805@gmail.com</a>
+              <a href="https://linkedin.com/in/rashi-vyas-code" target="_blank">LinkedIn — rashi-vyas-code</a>
+              <a id="downloadResume" href="resume.pdf" download>Resume (insert coin)</a>
+              <div style="font-size:10px;color:var(--muted);margin-top:8px">Pro tip: Recruiters can press <strong>R</strong> to download resume quickly.</div>
+            </div>
+
+            <div class="pixel-desk">
+              <div class="pixel-stage">
+                <div class="pixel-avatar" id="pixelAvatar">
+                  <div style="font-size:9px">8-BIT RASHI</div>
+                </div>
+                <div class="laptop" id="laptop"></div>
+                <div class="cup"></div>
+                <div class="desk"></div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT MODAL -->
+<div class="modal" id="projectModal" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="game-modal" role="document" aria-label="Project details">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--neon-pink)" id="projModalTitle">PROJECT</div>
+      <div class="close" id="projModalClose" role="button" tabindex="0">CLOSE</div>
+    </div>
+
+    <div class="proj-top">
+      <div class="proj-left" id="projLeft">
+        <!-- Overview (left) -->
+        <div id="projOverview" style="font-size:11px;color:var(--muted)"></div>
+      </div>
+
+      <div class="proj-right" id="projRight">
+        <!-- Code snippet (right) -->
+        <pre class="code-block" id="projCode">// code snippet here</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CERTIFICATE MODAL -->
+<div class="modal" id="certModal" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="game-modal" role="document" aria-label="Certificate preview">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--neon-pink)" id="certModalTitle">CERTIFICATE</div>
+      <div class="close" id="certModalClose" role="button" tabindex="0">CLOSE</div>
+    </div>
+
+    <div class="cert-top">
+      <div class="cert-left" id="certLeft">
+        <!-- Certificate image/embed goes here -->
+        <div id="certPreview" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff"></div>
+      </div>
+
+      <div class="cert-right" id="certRight">
+        <div id="certBody" style="font-size:11px;color:var(--muted)"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- audio -->
+<audio id="bgChiptune" loop preload="auto">
+  <!-- Replace with your chiptune file if hosting locally -->
+  <source src="https://cdn.freesound.org/previews/626/626163_1648170-lq.mp3" type="audio/mpeg">
+</audio>
+<audio id="coinSound">
+  <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg">
+</audio>
+<audio id="selectBeep">
+  <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" type="audio/ogg">
+</audio>
+<audio id="openSound">
+  <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" type="audio/ogg">
+</audio>
+
+<script>
+/* ========= STATE & ELEMENTS ========= */
+const attract = document.getElementById('attract');
+const pressStart = document.getElementById('pressStart');
+const hud = document.getElementById('hud');
+const content = document.getElementById('content');
+const demoOverlay = document.getElementById('demoOverlay');
+const demoTimer = document.getElementById('demoTimer');
+const bgChiptune = document.getElementById('bgChiptune');
+const coinBtn = document.getElementById('coinBtn');
+const coinSound = document.getElementById('coinSound');
+const selectBeep = document.getElementById('selectBeep');
+const openSound = document.getElementById('openSound');
+
+let started = false;
+let demoCountdown = 10;
+let demoInterval = null;
+
+/* ========= ATTRACT MODE: sparkles ========= */
+(function createSparkles(){
+  const container = document.querySelector('.sparkles');
+  for(let i=0;i<40;i++){
+    const s = document.createElement('div');
+    s.className='spark';
+    s.style.left = Math.random()*100 + '%';
+    s.style.top = 60 + Math.random()*40 + '%';
+    s.style.background = Math.random()>0.5 ? 'var(--neon-pink)' : 'var(--neon-cyan)';
+    s.style.animationDuration = (1 + Math.random()*2) + 's';
+    s.style.opacity = 0.9*Math.random();
+    container.appendChild(s);
+  }
+})();
+
+/* ========= DEMO COUNTDOWN ========= */
+function startDemoCountdown(){
+  demoCountdown = 10;
+  demoTimer.textContent = demoCountdown;
+  demoInterval = setInterval(()=>{
+    demoCountdown--;
+    demoTimer.textContent = demoCountdown;
+    if(demoCountdown<=0){
+      clearInterval(demoInterval);
+      playAttractDemo();
+    }
+  },1000);
+}
+function resetDemoCountdown(){
+  if(demoInterval) clearInterval(demoInterval);
+  startDemoCountdown();
+}
+
+/* demo: cycles a simple preview overlay */
+function playAttractDemo(){
+  demoOverlay.style.display = 'flex';
+  // show for 8s then hide, restart timer
+  setTimeout(()=>{ demoOverlay.style.display='none'; resetDemoCountdown(); },8000);
+}
+
+/* ========= ENTER ARCADE (start) ========= */
+function enterArcade(){
+  if(started) return;
+  started = true;
+  // audio gesture: play chiptune (may require user gesture)
+  try{ bgChiptune.volume = 0.15; bgChiptune.play().catch(()=>{}); }catch(e){}
+  // coin sound
+  coinSound.currentTime = 0; coinSound.play().catch(()=>{});
+  // flash
+  attract.style.transition = 'opacity .5s ease';
+  attract.style.opacity = 0;
+  setTimeout(()=>{ attract.style.display='none'; hud.style.display='flex'; content.style.display='flex'; content.querySelector('.page.active')?.classList.add('active'); },600);
+}
+/* start on click + Enter key */
+pressStart.addEventListener('click', enterArcade);
+pressStart.addEventListener('keydown', (e)=>{ if(e.key==='Enter') enterArcade(); });
+document.addEventListener('keydown', (e)=>{
+  if(!started && (e.key === 'Enter' || e.key === ' ')) enterArcade();
+});
+
+/* demo countdown init */
+startDemoCountdown();
+
+/* reset countdown on interactions */
+['click','mousemove','touchstart','keydown'].forEach(ev => { document.addEventListener(ev, resetDemoCountdown); });
+
+/* ========= NAV & PAGES ========= */
+const navBtns = Array.from(document.querySelectorAll('.navBtn'));
+function clearPages(){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); }
+function openNav(target){
+  clearPages();
+  const el = document.getElementById(target);
+  if(el) el.classList.add('active');
+  // play small select beep
+  selectBeep.currentTime = 0; selectBeep.play().catch(()=>{});
+}
+navBtns.forEach(b => b.addEventListener('click', ()=> openNav(b.dataset.target)));
+/* quick keys: 1..6 */
+document.addEventListener('keydown', e=>{
+  if(!started) return;
+  if(e.key==='1') openNav('summary');
+  if(e.key==='2') openNav('projects');
+  if(e.key==='3') openNav('skills');
+  if(e.key==='4') openNav('education');
+  if(e.key==='5') openNav('experience');
+  if(e.key==='6' || e.key.toLowerCase()==='c') openNav('contact');
+  if(e.key.toLowerCase()==='r'){ document.getElementById('downloadResume').click(); coinSound.currentTime=0; coinSound.play().catch(()=>{}); }
+});
+
+
+/* ========= PROJECTS DATA & OPEN ========= */
+const cartridges = Array.from(document.querySelectorAll('.cartridge'));
+const projectModal = document.getElementById('projectModal');
+const projModalClose = document.getElementById('projModalClose');
+const projModalTitle = document.getElementById('projModalTitle');
+const projOverview = document.getElementById('projOverview');
+const projCode = document.getElementById('projCode');
+
+const projectData = {
+  music: {
+    title: 'Coquette Music Player',
+    body: `<strong>Overview:</strong> A pastel, vinyl-styled offline desktop music player built with Electron and JS. <br><br>Features: mood playlists, shuffle, animations, and an aesthetic vinyl UI.<br/><br><strong>What I did:</strong> Desktop UI in Electron, playlist engine, local file scanning, state persistence, responsive animations.<br/><br><strong>Learnings:</strong> Desktop packaging, electron IPC, offline UX.`,
+    code: `// playlist shuffle example (JS)
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}`,
+    gif: '' // replace with path to small preview gif
+  },
+  fir: {
+    title: 'Online FIR Filing System',
+    body: `<strong>Overview:</strong> Web portal for citizens to file FIRs & track updates.<br><br> Secure login, validation, MySQL backend, accessibility improvements.<br/><br><strong>What I did:</strong> Server-side Java modules, DB schema design, secure sessions, form validation.`,
+    code: `// sample validation (Java pseudo)
+if(username == null || username.trim().isEmpty()){
+  throw new IllegalArgumentException("Username required");
+}`,
+    gif: ''
+  },
+  news: {
+    title: 'Dynamic News Website',
+    body: `<strong>Overview:</strong> Responsive news aggregator with search and optimized DOM rendering for smoother reading experience.<br/><br><strong>What I did:</strong> Frontend performance, accessible markup, client-side search.`,
+    code: `// simple search
+const results = articles.filter(a => a.title.toLowerCase().includes(query.toLowerCase()));`,
+    gif: ''
+  },
+  website: {
+    title: 'Startup Business Website',
+    body: `<strong>Overview:</strong> Built a website from scratch for a Startup indicating their services, domains, projects and products.<br><br> Inculcated E-commerce options.<br/><br><strong>What I did:</strong> E-commerce Platform, personalized UI, Interactive elements.`,
+    code: `// add item to cart with quantity check
+function addToCart(cart, product) {
+  const found = cart.find(p => p.id === product.id);
+  if (found) {
+    found.qty += 1;
+  } else {
+    cart.push({ ...product, qty: 1 });
+  }
+  return cart;
+}`,
+    gif: ''
+  }
+};
+
+function openProject(key){
+  const p = projectData[key];
+  if(!p) return;
+  projModalTitle.textContent = p.title;
+  projOverview.innerHTML = p.body;
+  projCode.textContent = p.code || '';
+  projectModal.classList.add('open');
+  openSound.currentTime=0; openSound.play().catch(()=>{});
+}
+cartridges.forEach(c => c.addEventListener('click', ()=> openProject(c.dataset.project)));
+projModalClose.addEventListener('click', ()=> projectModal.classList.remove('open'));
+projectModal.addEventListener('click', (e)=> { if(e.target === projectModal) projectModal.classList.remove('open'); });
+
+/* ========= CERTIFICATES ========= */
+const certModal = document.getElementById('certModal');
+const certModalClose = document.getElementById('certModalClose');
+const certPreview = document.getElementById('certPreview');
+const certBody = document.getElementById('certBody');
+const certModalTitle = document.getElementById('certModalTitle');
+
+const certMap = {
+  ibm: {file:"ibm.png", skills:"AI & Cloud Prototyping"},
+  vodafone: {file:"vodafone.jpg", skills:"LLMs, Data Analytics, Python, Excel, SQL <br><br> Analyzed real datasets using Python, SQL, and Excel to extract insights and build solutions.<br><br>Strengthened my ability to clean, process, and interpret business data for decision-making."},
+  awsc: {file:"aws_cloud.jpg", skills:"Cloud Foundations <br><br> Gained hands-on knowledge of cloud computing concepts including storage, networking, and compute services on AWS.<br><br> Built a strong foundation in cloud security and deployment models."},
+  awsml: {file:"aws_ml.jpg", skills:"Machine Learning <br><br>Basics Learned machine learning fundamentals and implemented models using AWS services.<br><br> Worked on supervised and unsupervised learning tasks, developing an understanding of real-world ML applications."},
+  mckinsey: {file:"mckinsey.jpg", skills:"Leadership, Strategy <br><br> Completed a career accelerator program focusing on problem-solving, communication, and leadership skills.<br><br> Learned how to structure complex problems, present impactful solutions, and work effectively in teams."},
+  deloitte: {file:"deloitte.jpg", skills:"Data Analytics <br><br> Completed a practical simulation in Tableau, building interactive dashboards to present data-driven insights.<br><br> Strengthened skills in visualization, storytelling with data, and aligning analysis with business needs. "},
+  tata: {file:"tata.jpg", skills:"Business Insights, Data Visualization <br><br> Created dashboards in Power BI to transform raw data into meaningful visual insights.<br><br> Enhanced my ability to design clear, actionable reports for strategic decisions."},
+  nestle: {file:"nestle.jpg", skills:"Resilience, Adaptability <br><br> Developed professional resilience skills through structured learning, including adaptability, stress management, and growth mindset — valuable for thriving in dynamic work environments."},
+  java: {file:"java.png", skills:"Core Java <br><br> Completed coursework on Java programming fundamentals including syntax, data structures, and application building, strengthening my coding foundation."},
+  oops: {file:"oops.png", skills:"OOPs Concepts in Java <br><br> Explored OOP concepts such as encapsulation, inheritance, polymorphism, and abstraction.<br><br> Applied these principles to build scalable and modular applications. "}
+};
+
+function showCertificate(id){
+  const cert = certMap[id];
+  certModalTitle.textContent = 'CERTIFICATE';
+  certPreview.innerHTML = '';
+  certBody.innerHTML = '';
+  if(cert){
+    const ext = (cert.file || '').split('.').pop().toLowerCase();
+    // if PDF preview exists, prefer PDF embed
+    if(cert.pdf && cert.pdf.toLowerCase().endsWith('.pdf')){
+      certPreview.innerHTML = `<embed src="${cert.pdf}" type="application/pdf" width="100%" height="100%" style="border-radius:6px" />`;
+    } else if(cert.file && (ext === 'png' || ext === 'jpg' || ext === 'jpeg')){
+      certPreview.innerHTML = `<img src="${cert.file}" alt="certificate" style="max-width:100%;max-height:100%;border-radius:6px">`;
+    } else {
+      certPreview.innerHTML = `<div style="color:#fff">No preview available</div>`;
+    }
+
+    certBody.innerHTML = `
+      <div style="font-size:11px;color:var(--muted)">Skills earned: <strong>${cert.skills}</strong></div>
+      ${cert.pdf ? `<div style="margin-top:8px"><a href="${cert.pdf}" target="_blank">Open full PDF</a></div>` : ''}
+    `;
+  } else {
+    certPreview.innerHTML = `<div style="color:#fff">No preview</div>`;
+    certBody.innerHTML = `<div style="font-size:11px;color:var(--muted)">No certificate found</div>`;
+  }
+  // ensure project code block is empty/hid
+  projectModal.classList.remove('open');
+  certModal.classList.add('open');
+  openSound.currentTime=0; openSound.play().catch(()=>{});
+}
+
+certModalClose.addEventListener('click', ()=> certModal.classList.remove('open'));
+certModal.addEventListener('click', (e)=> { if(e.target === certModal) certModal.classList.remove('open'); });
+
+/* ========= RESUME COIN ========= */
+coinBtn.addEventListener('click', () => {
+  // coin sound + animation (simple)
+  coinSound.currentTime = 0; coinSound.play().catch(()=>{});
+  // trigger resume download
+  const a = document.createElement('a'); a.href='resume.pdf'; a.download='Rashi_Vyas_Resume.pdf'; document.body.appendChild(a); a.click(); a.remove();
+});
+
+/* also coin behavior for download link in contact */
+document.getElementById('downloadResume').addEventListener('click', (e)=>{
+  coinSound.currentTime = 0; coinSound.play().catch(()=>{});
+});
+
+/* ========= PIXEL AVATAR (contact) simple animation ========= */
+(function avatarIdle(){
+  const av = document.getElementById('pixelAvatar');
+  // small blink loop via background color pulse
+  let t=0;
+  setInterval(()=>{
+    t++;
+    av.style.transform = `translateY(${Math.sin(t/10)*4}px)`;
+  },80);
+})();
+
+
+/* ========= accessibility: focus outlines + keyboard nav between cartridges ========= */
+let cartIndex = 0;
+document.addEventListener('keydown', e=>{
+  if(!started) return;
+  const carts = Array.from(document.querySelectorAll('.cartridge'));
+  if(document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+  if(e.key === 'ArrowRight'){ cartIndex = Math.min(carts.length-1, cartIndex+1); carts[cartIndex].focus(); carts[cartIndex].style.outline='2px solid rgba(77,224,255,0.25)'; }
+  if(e.key === 'ArrowLeft'){ cartIndex = Math.max(0, cartIndex-1); carts[cartIndex].focus(); carts[cartIndex].style.outline='2px solid rgba(255,87,166,0.25)'; }
+  if(e.key === 'Enter'){ if(document.activeElement.classList.contains('cartridge')) document.activeElement.click(); }
+});
+
+/* ========= small helpful utilities ========= */
+function playSelect(){ selectBeep.currentTime=0; selectBeep.play().catch(()=>{}); }
+
+/* ========= initial UI state: show attract (we already have that) ========= */
+/* nothing further; the attract mode will change to game mode when start pressed */
+
+</script>
+</body>
+</html>
